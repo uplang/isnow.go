@@ -174,7 +174,7 @@ func isWildcardField(f *rawField) bool {
 		return false
 	}
 	t := f.terms[0]
-	return t.lo != nil && t.lo.star && t.hi == nil && t.incr == nil
+	return t.lo != nil && t.lo.star && t.hi == nil && t.incr == nil && !t.loFromEnd
 }
 
 // isExactField reports whether a field is a single plain numeric value.

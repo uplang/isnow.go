@@ -130,6 +130,45 @@ func TestMoreErrorBranches(t *testing.T) {
 	}
 }
 
+func TestGuardsRejectSilentWrong(t *testing.T) {
+	rangeCases := []string{
+		":0+[90]",                   // stride >= minute cycle
+		"0+[25]",                    // stride >= hour cycle
+		"::+[60]",                   // stride == second cycle
+		"/-40",                      // tail longer than the day cycle
+		"/-0",                       // zero-length tail
+		"*/*/* -2w 12:00",           // weekday tail (14 days) exceeds the 7-day cycle
+		":0+[99999999999999999999]", // overflow stride
+		"/-99999999999999999999",    // overflow tail
+		"Monday+[0] noon",           // occurrence index 0
+		"Monday+[6] noon",           // occurrence index > 5
+		"11/ Th-[6] noon",           // from-end occurrence index > 5
+		"/+[99w] noon",              // week stride > 53
+		"/5+[3w] noon",              // week anchor >= stride
+	}
+	for _, src := range rangeCases {
+		parseErr(t, src, ErrRange)
+	}
+}
+
+func TestNumericWeekdaySpanRendersNames(t *testing.T) {
+	got := mustParse(t, "*/*/* 2-6 12:00").Canonical()
+	if got != "*/*/* Monday-Friday 12:00:00" {
+		t.Fatalf("Canonical = %q", got)
+	}
+	// A numeric weekday step anchor stays numeric (arithmetic, not occurrence).
+	if got := mustParse(t, "*/*/* 2+[1] 12:00").Canonical(); got != "*/*/* 2+[1] 12:00:00" {
+		t.Fatalf("step anchor Canonical = %q", got)
+	}
+}
+
+func TestYearStepUnbounded(t *testing.T) {
+	// Year steps are open progressions with no cycle guard.
+	if got := mustParse(t, "2000+[100]// noon").Canonical(); got != "2000+[100]/*/* * 12:00:00" {
+		t.Fatalf("year step Canonical = %q", got)
+	}
+}
+
 func TestStarAnchorStepCanonical(t *testing.T) {
 	// A wildcard step anchor renders as '*'.
 	got := mustParse(t, "::*+[2]").Canonical()

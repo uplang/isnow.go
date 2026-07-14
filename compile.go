@@ -161,11 +161,33 @@ func fromEndTerm(r role, t rawTerm) (pred, error) {
 		return nil, ErrContext // from-end needs a numeric magnitude
 	}
 	length := atomDays(t.lo)
+	if length < 1 || length > cycleSize(r) {
+		return nil, ErrRange // a tail must be 1..cycle long
+	}
 	return func(c instantCtx) bool {
 		clo, chi := c.cycle(r)
 		v := c.value(r)
 		return v >= chi-length+1 && v >= clo
 	}, nil
+}
+
+// cycleSize is the number of distinct values in a role's parent cycle, for
+// range-checking tails and step strides. Year has no cycle (0 = unbounded).
+func cycleSize(r role) int {
+	switch r {
+	case roleMonth:
+		return 12
+	case roleDay:
+		return 31
+	case roleWeekday:
+		return 7
+	case roleHour:
+		return 24
+	case roleMinute, roleSecond:
+		return 60
+	default:
+		return 0
+	}
 }
 
 // inDomain validates a scalar against a role's static domain.

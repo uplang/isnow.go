@@ -78,6 +78,9 @@ func renderEndpoint(r role, a *rawAtom) string {
 	if a.name != "" {
 		return weekdayNamesOf(a.name)[0]
 	}
+	if r == roleWeekday {
+		return capitalize(weekdayNames[a.qtys[0].num])
+	}
 	return pad(r, a.qtys[0].num)
 }
 
@@ -99,6 +102,8 @@ func renderAnchor(r role, t rawTerm) string {
 	if t.lo.star {
 		return "*"
 	}
+	// A numeric weekday step anchor stays numeric: it is an arithmetic
+	// progression, distinct from a symbolic anchor's occurrence selection.
 	return renderQtys(t.lo.qtys) // step anchors render unpadded
 }
 

@@ -29,6 +29,9 @@ func occurrenceTerm(name string, in *rawIncr) (pred, error) {
 		return nil, ErrSymbol
 	}
 	ks := qtyNums(in.qtys)
+	if err := occurrenceIndices(ks); err != nil {
+		return nil, err
+	}
 	return func(c instantCtx) bool {
 		if !contains(set, c.weekday) {
 			return false
@@ -39,6 +42,17 @@ func occurrenceTerm(name string, in *rawIncr) (pred, error) {
 		}
 		return contains(ks, idx)
 	}, nil
+}
+
+// occurrenceIndices validates weekday-occurrence selectors: a month holds at
+// most five of any weekday, so the index must be 1..5.
+func occurrenceIndices(ks []int) error {
+	for _, k := range ks {
+		if k < 1 || k > 5 {
+			return ErrRange
+		}
+	}
+	return nil
 }
 
 // weekStepTerm matches days whose zero-based week-of-year index is ≡ anchor mod N.
@@ -54,11 +68,17 @@ func weekStepTerm(r role, anchor *rawAtom, in *rawIncr) (pred, error) {
 	if err != nil {
 		return nil, err
 	}
+	if a >= n || n > weeksPerYear {
+		return nil, ErrRange // a week stride must be 1..53 and larger than its anchor
+	}
 	return func(c instantCtx) bool {
 		wi := (c.dayOfYear - 1) / 7
 		return mod(wi-a, n) == 0
 	}, nil
 }
+
+// weeksPerYear caps a week-granular step; a year spans at most 53 week buckets.
+const weeksPerYear = 53
 
 // arithStepTerm matches an arithmetic progression from the anchor (or the cycle
 // edge when the anchor is elided). A '-' step descends from the anchor/cycle end.
@@ -71,7 +91,26 @@ func arithStepTerm(r role, anchor *rawAtom, in *rawIncr) (pred, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := boundedStrides(r, ns); err != nil {
+		return nil, err
+	}
 	return func(c instantCtx) bool { return anyStep(c, r, a, elided, in.fromEnd, ns) }, nil
+}
+
+// boundedStrides rejects a field-local stride that cannot progress within its
+// cycle (stride >= cycle collapses to the anchor). Cross-cycle periods use a
+// unit step (e.g. +[90m]) instead. Year steps are open progressions (no cycle).
+func boundedStrides(r role, ns []int) error {
+	cs := cycleSize(r)
+	if cs == 0 {
+		return nil
+	}
+	for _, n := range ns {
+		if n >= cs {
+			return ErrRange
+		}
+	}
+	return nil
 }
 
 func anyStep(c instantCtx, r role, anchor int, elided, fromEnd bool, ns []int) bool {

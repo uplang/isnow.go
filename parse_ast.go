@@ -64,7 +64,10 @@ func qtys(ctxs []g.IQtyContext) []rawQty {
 func qty(ctx g.IQtyContext) rawQty {
 	// NUMBER is guaranteed by the grammar (qty : NUMBER NAME?); GetText is digits.
 	text := ctx.NUMBER().GetText()
-	n, _ := strconv.Atoi(text)
+	n, err := strconv.Atoi(text)
+	if err != nil {
+		n = -1 // overflow/invalid: a negative magnitude fails every range check
+	}
 	return rawQty{num: n, digits: len(text), unit: qtyUnit(ctx)}
 }
 
