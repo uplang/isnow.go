@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>isnow — build & understand date/time patterns</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #0e1116; --panel: #161b22; --edge: #2a313c; --ink: #e6edf3; --dim: #8b949e;
+    --year: #f2cc60; --month: #d29922; --day: #e3873c; --weekday: #a5d6ff;
+    --hour: #7ee787; --minute: #56d364; --second: #3fb950; --bound: #d2a8ff;
+    --ok: #3fb950; --no: #f85149; --accent: #58a6ff;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f6f8fa; --panel:#fff; --edge:#d0d7de; --ink:#1f2328; --dim:#57606a;
+            --weekday:#0969da; --hour:#1a7f37; --year:#9a6700; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, sans-serif; line-height: 1.55; }
+  .wrap { max-width: 60rem; margin: 0 auto; padding: 2rem 1.2rem 4rem; }
+  header h1 { font-size: 1.5rem; margin: 0 0 .2rem; }
+  header p { color: var(--dim); margin: 0 0 1.4rem; }
+  header .clock { font-family: var(--mono); color: var(--dim); }
+  header .clock b { color: var(--ink); }
+  .panel { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 1rem 1.1rem; margin: 1rem 0; }
+  label.field { display: block; font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--dim); margin-bottom: .35rem; }
+  #src { width: 100%; font-family: var(--mono); font-size: 1.4rem; padding: .7rem .8rem; border-radius: 8px;
+         border: 1px solid var(--edge); background: var(--bg); color: var(--ink); }
+  #src:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .verdict { display: flex; align-items: center; gap: .7rem; margin: .9rem 0 .2rem; font-size: 1.15rem; }
+  .lamp { width: 14px; height: 14px; border-radius: 50%; background: var(--dim); flex: none; box-shadow: 0 0 0 0 transparent; }
+  .lamp.on { background: var(--ok); box-shadow: 0 0 12px 2px color-mix(in srgb, var(--ok) 60%, transparent); }
+  .lamp.off { background: var(--no); }
+  .explain { color: var(--dim); font-style: italic; min-height: 1.5em; }
+  .error { color: var(--no); font-family: var(--mono); }
+  .structure { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .3rem; }
+  .chip { border: 1px solid var(--edge); border-radius: 8px; padding: .4rem .6rem; min-width: 4.5rem; }
+  .chip .role { font-size: .64rem; letter-spacing: .05em; text-transform: uppercase; }
+  .chip .val { font-family: var(--mono); font-size: 1.05rem; }
+  .chip .gloss { font-size: .78rem; color: var(--dim); }
+  .chip.year .role { color: var(--year); } .chip.month .role { color: var(--month); }
+  .chip.day .role { color: var(--day); } .chip.weekday .role { color: var(--weekday); }
+  .chip.hour .role { color: var(--hour); } .chip.minute .role { color: var(--minute); }
+  .chip.second .role { color: var(--second); } .chip.bound .role { color: var(--bound); }
+  .canon { font-family: var(--mono); color: var(--dim); word-break: break-all; }
+  .occ { font-family: var(--mono); margin: .15rem 0; }
+  .occ .rel { color: var(--dim); }
+  h2 { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); margin: 0 0 .6rem; }
+  .builder { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); gap: .6rem; }
+  .builder label { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--dim); }
+  .builder input { width: 100%; font-family: var(--mono); padding: .4rem .5rem; border-radius: 6px; border: 1px solid var(--edge); background: var(--bg); color: var(--ink); }
+  .built { display: flex; align-items: center; gap: .6rem; margin-top: .8rem; flex-wrap: wrap; }
+  .built code { font-family: var(--mono); font-size: 1.05rem; background: var(--bg); padding: .35rem .6rem; border-radius: 6px; border: 1px solid var(--edge); }
+  button { font: inherit; cursor: pointer; border: 1px solid var(--edge); background: var(--bg); color: var(--ink); border-radius: 6px; padding: .35rem .7rem; }
+  button:hover { border-color: var(--accent); }
+  .badge { font-size: .78rem; padding: .1rem .5rem; border-radius: 999px; }
+  .badge.ok { color: var(--ok); border: 1px solid var(--ok); }
+  .gallery { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .gallery button { font-family: var(--mono); }
+  table.ref { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  table.ref td { padding: .3rem .5rem; border-top: 1px solid var(--edge); vertical-align: top; }
+  table.ref td:first-child { font-family: var(--mono); white-space: nowrap; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--dim); }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>isnow</h1>
+    <p>Build and understand date/time patterns. An <strong>isnow</strong> <em>holds at</em> an instant when every field matches — type one and watch it explained live.</p>
+    <div class="clock">now: <b id="now">—</b></div>
+  </header>
+
+  <div class="panel">
+    <label class="field" for="src">the isnow</label>
+    <input id="src" spellcheck="false" autocomplete="off" value="M,W,F noon" aria-label="isnow pattern">
+    <div class="verdict"><span class="lamp" id="lamp"></span><span id="verdict">…</span></div>
+    <div class="explain" id="explain"></div>
+    <div class="canon" id="canon"></div>
+    <div class="structure" id="structure"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Next occurrences</h2>
+    <div id="occ"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Builder — compose from fields</h2>
+    <div class="builder" id="builder"></div>
+    <div class="built">
+      <code id="built">*</code>
+      <button id="use">Use it ↑</button>
+      <button id="copy">Copy</button>
+      <span class="badge ok" id="rt" hidden>round-trips ✓</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Examples</h2>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <div class="panel">
+    <details open>
+      <summary>Reference — the field algebra</summary>
+      <table class="ref">
+        <tr><td>*</td><td>wildcard — any value</td></tr>
+        <tr><td>12</td><td>exact value</td></tr>
+        <tr><td>M,W,F</td><td>a set (union)</td></tr>
+        <tr><td>!1</td><td>exclusion — everything but 1</td></tr>
+        <tr><td>8-12</td><td>an inclusive span (wraps on cyclic fields: 22-2)</td></tr>
+        <tr><td>-1</td><td>from the end — the last day of the month</td></tr>
+        <tr><td>-2w1d</td><td>a unit compound — the last 2 weeks and 1 day</td></tr>
+        <tr><td>:0+[15]</td><td>a step — every 15 from an anchor</td></tr>
+        <tr><td>Th-[1]</td><td>the last Thursday of the month</td></tr>
+        <tr><td>Monday+[3]</td><td>the 3rd Monday of the month</td></tr>
+        <tr><td>noon / midnight</td><td>time symbols (12:00:00 / 00:00:00)</td></tr>
+        <tr><td>&gt;=2011 &lt;9/1</td><td>since / until bounds</td></tr>
+      </table>
+      <p style="color:var(--dim)">Shape: <code style="font-family:var(--mono)">Y/m/d&nbsp;&nbsp;w&nbsp;&nbsp;H:M:S</code> — date group, weekday, time group. Full docs at <a href="https://uplang.github.io/docs.isnow.go/">uplang.github.io/docs.isnow.go</a>.</p>
+    </details>
+  </div>
+</div>
+
+<script>
+const ROLES = ["year","month","day","weekday","hour","minute","second"];
+const FIELDS = [
+  ["year","Year"],["month","Month"],["day","Day"],["weekday","Weekday"],
+  ["hour","Hour"],["minute","Minute"],["second","Second"],["since","Since"],["until","Until"],
+];
+const EXAMPLES = [
+  "6","M,W,F noon","11/ Th-[1] noon","::+[9] >=6 <=18","/1 18","Su :0,30",
+  "*/*/1 * 12:*:00","12 <9/1","M-F 09:00","*/*/-1 midnight",
+];
+
+const $ = (id) => document.getElementById(id);
+const enc = (s) => encodeURIComponent(s);
+
+// localISO formats an instant with the visitor's own UTC offset, so the server
+// evaluates the isnow against the wall clock the page shows (not UTC).
+function localISO(d = new Date()) {
+  const p = (n) => String(n).padStart(2, "0");
+  const off = -d.getTimezoneOffset(); // minutes east of UTC
+  const sign = off >= 0 ? "+" : "-";
+  const oh = p(Math.floor(Math.abs(off) / 60)), om = p(Math.abs(off) % 60);
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` +
+    `T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}${sign}${oh}:${om}`;
+}
+const nowISO = localISO;
+
+async function api(path) {
+  const r = await fetch(path, { headers: { accept: "application/json" } });
+  return { ok: r.ok, status: r.status, body: await r.json().catch(() => ({})) };
+}
+
+function glossField(role, val) {
+  if (val === "*") return "any";
+  if (/^\d+$/.test(val)) return String(parseInt(val, 10));
+  if (val.includes(",")) return val.split(",").join(", ");
+  if (/^\d+-\d+$/.test(val)) return val.replace("-", " through ");
+  if (val.includes("+[") || val.includes("-[")) return "stepped: " + val;
+  if (val.startsWith("-")) return "from the end: " + val.slice(1);
+  return val;
+}
+
+function renderStructure(canonical) {
+  const s = $("structure"); s.innerHTML = "";
+  const [main, ...boundParts] = canonical.split(/ (?=[<>])/);
+  const m = main.match(/^(\S+)\/(\S+)\/(\S+) (\S+) (\S+):(\S+):(\S+)$/);
+  if (!m) return;
+  const vals = m.slice(1);
+  ROLES.forEach((role, i) => {
+    const chip = document.createElement("div");
+    chip.className = "chip " + role;
+    chip.innerHTML = `<div class="role">${role}</div><div class="val">${vals[i]}</div><div class="gloss">${glossField(role, vals[i])}</div>`;
+    s.appendChild(chip);
+  });
+  boundParts.forEach((b) => {
+    const chip = document.createElement("div");
+    chip.className = "chip bound";
+    const op = b.startsWith(">") ? "since" : "until";
+    chip.innerHTML = `<div class="role">${op}</div><div class="val">${b}</div><div class="gloss">a bound</div>`;
+    s.appendChild(chip);
+  });
+}
+
+function relTime(iso) {
+  const d = (new Date(iso) - new Date()) / 1000;
+  const abs = Math.abs(d);
+  const unit = abs < 90 ? [d, "s"] : abs < 5400 ? [d / 60, "min"] : abs < 129600 ? [d / 3600, "h"] : [d / 86400, "d"];
+  return `${d < 0 ? "" : "in "}${Math.round(unit[0])}${unit[1]}${d < 0 ? " ago" : ""}`;
+}
+
+async function evaluate() {
+  const src = $("src").value.trim();
+  if (!src) { $("verdict").textContent = "type an isnow above"; return; }
+  const q = `?q=${enc(src)}`;
+  const [chk, exp, nxt] = await Promise.all([
+    api(`/v1/check/${q}&at=${enc(nowISO())}`),
+    api(`/v1/explain/${q}`),
+    api(`/v1/next/${q}&n=5&from=${enc(nowISO())}`),
+  ]);
+  if (!chk.ok) {
+    const e = chk.body.error || {};
+    $("lamp").className = "lamp";
+    $("verdict").innerHTML = `<span class="error">${(e.code || "error").toUpperCase()} — ${e.message || "invalid isnow"}</span>`;
+    $("explain").textContent = ""; $("canon").textContent = ""; $("structure").innerHTML = ""; $("occ").innerHTML = "";
+    return;
+  }
+  const holds = chk.body.holds;
+  $("lamp").className = "lamp " + (holds ? "on" : "off");
+  $("verdict").textContent = holds ? "holds now" : "does not hold now";
+  $("explain").textContent = exp.ok ? exp.body.explanation : "";
+  $("canon").textContent = chk.body.canonical;
+  renderStructure(chk.body.canonical);
+  const occ = (nxt.ok && nxt.body.occurrences) || [];
+  $("occ").innerHTML = occ.length
+    ? occ.map((o) => `<div class="occ">${new Date(o).toLocaleString()} <span class="rel">${relTime(o)}</span></div>`).join("")
+    : `<div class="occ rel">no occurrence within the horizon</div>`;
+}
+
+async function build() {
+  const params = new URLSearchParams();
+  FIELDS.forEach(([key]) => { const v = $("b_" + key).value.trim(); if (v) params.set(key, v); });
+  const res = await api(`/v1/build?${params.toString()}`);
+  const el = $("built"), rt = $("rt");
+  if (!res.ok) { el.textContent = (res.body.error && res.body.error.message) || "invalid"; rt.hidden = true; return; }
+  el.textContent = res.body.isnow;
+  rt.hidden = false;
+}
+
+let timer;
+function onInput() { clearTimeout(timer); timer = setTimeout(evaluate, 150); }
+
+function init() {
+  const b = $("builder");
+  FIELDS.forEach(([key, label]) => {
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `<label for="b_${key}">${label}</label><input id="b_${key}" spellcheck="false" autocomplete="off" placeholder="*">`;
+    b.appendChild(wrap);
+    wrap.querySelector("input").addEventListener("input", build);
+  });
+  const g = $("gallery");
+  EXAMPLES.forEach((ex) => {
+    const btn = document.createElement("button");
+    btn.textContent = ex;
+    btn.addEventListener("click", () => { $("src").value = ex; evaluate(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+    g.appendChild(btn);
+  });
+  $("src").addEventListener("input", onInput);
+  $("use").addEventListener("click", () => { $("src").value = $("built").textContent; evaluate(); });
+  $("copy").addEventListener("click", () => navigator.clipboard && navigator.clipboard.writeText($("built").textContent));
+  setInterval(() => { $("now").textContent = new Date().toLocaleString(); evaluate(); }, 1000);
+  $("now").textContent = new Date().toLocaleString();
+  evaluate();
+}
+init();
+</script>
+</body>
+</html>

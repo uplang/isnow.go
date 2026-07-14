@@ -2,10 +2,22 @@ package command
 
 import (
 	"errors"
+	"fmt"
+	"io"
 
 	isnow "github.com/uplang/isnow.go"
 	"github.com/uplang/isnow.go/internal/constants"
 )
+
+// Report writes a diagnostic for err (unless it is nil or the silent
+// "does not hold" verdict, whose exit code is the answer) and returns the exit
+// code. It is the composition root's single place for surfacing errors.
+func Report(w io.Writer, err error) int {
+	if err != nil && !errors.Is(err, ErrNotHolds) {
+		fmt.Fprintf(w, "isnow: %s\n", err)
+	}
+	return ExitCode(err)
+}
 
 // ErrNotHolds signals the membership test failed (CLI exit code 1).
 var ErrNotHolds = errors.New("isnow does not hold")

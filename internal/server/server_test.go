@@ -108,6 +108,21 @@ func TestQueryParameterAlternative(t *testing.T) {
 	}
 }
 
+func TestIndexAndNotFound(t *testing.T) {
+	h := newServer()
+	rec := get(t, h, "/")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "and understand date/time") {
+		t.Fatalf("index = %d (len %d)", rec.Code, rec.Body.Len())
+	}
+	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/html") {
+		t.Fatalf("index content-type = %q", ct)
+	}
+	nf := get(t, h, "/no/such/route")
+	if nf.Code != http.StatusNotFound || !strings.Contains(nf.Body.String(), `"not_found"`) {
+		t.Fatalf("404 = %d %q", nf.Code, nf.Body.String())
+	}
+}
+
 func TestHealth(t *testing.T) {
 	rec := get(t, newServer(), "/healthz")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"ok"`) {

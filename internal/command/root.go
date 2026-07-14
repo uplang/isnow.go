@@ -17,6 +17,8 @@ func Root(env *app.Env) *cli.Command {
 	root.Usage = "match instants against isnow date/time patterns"
 	root.Description = "isnow tests, derives, explains, schedules, and serves DTimpalr patterns."
 	root.EnableShellCompletion = true
+	root.Writer = env.Out
+	root.ErrWriter = env.Err
 	root.ExitErrHandler = func(context.Context, *cli.Command, error) {}
 	root.Commands = []*cli.Command{
 		deriveCommand(env, "next", true),

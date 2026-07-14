@@ -40,7 +40,8 @@ func newHarness() *harness {
 
 func (h *harness) run(args ...string) int {
 	full := append([]string{"isnow"}, args...)
-	return ExitCode(Root(h.env).Run(context.Background(), full))
+	// Mirror main: Report prints diagnostics to Err and maps the exit code.
+	return Report(h.env.Err, Root(h.env).Run(context.Background(), full))
 }
 
 func TestQueryCommand(t *testing.T) {
@@ -54,14 +55,40 @@ func TestQueryCommand(t *testing.T) {
 	if code := h.run("25"); code != 2 {
 		t.Fatalf("bad isnow exit = %d", code)
 	}
-	if code := h.run(); code != 2 {
-		t.Fatalf("no arg exit = %d", code)
-	}
 	if code := h.run("6", "--at", "bad"); code != 2 {
 		t.Fatalf("bad at exit = %d", code)
 	}
 	if code := h.run("6", "--tz", "Bogus/Zone"); code != 2 {
 		t.Fatalf("bad tz exit = %d", code)
+	}
+}
+
+func TestBareInvocationGuides(t *testing.T) {
+	// Bare `isnow` is not silent: it prints guidance and exits 2.
+	h := newHarness()
+	if code := h.run(); code != 2 {
+		t.Fatalf("bare isnow exit = %d, want 2", code)
+	}
+	if !strings.Contains(h.err.String(), "isnow argument is required") {
+		t.Fatalf("bare isnow gave no guidance: out=%q err=%q", h.out.String(), h.err.String())
+	}
+}
+
+func TestReportPrintsError(t *testing.T) {
+	var buf bytes.Buffer
+	if code := Report(&buf, isnow.ErrRange); code != 2 {
+		t.Fatalf("Report(range) code = %d", code)
+	}
+	if !strings.Contains(buf.String(), "isnow:") {
+		t.Fatalf("Report did not print: %q", buf.String())
+	}
+	buf.Reset()
+	if code := Report(&buf, ErrNotHolds); code != 1 || buf.Len() != 0 {
+		t.Fatalf("Report(not-holds) = %d, %q (should be silent)", code, buf.String())
+	}
+	buf.Reset()
+	if code := Report(&buf, nil); code != 0 || buf.Len() != 0 {
+		t.Fatalf("Report(nil) = %d, %q", code, buf.String())
 	}
 }
 

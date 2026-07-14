@@ -32,7 +32,7 @@ func query(env *app.Env) *cli.Command {
 func runQuery(env *app.Env, c *cli.Command, at, tz string, explain bool) error {
 	src, err := firstArg(c)
 	if err != nil {
-		return err
+		return err // Report surfaces this; `isnow -h` / `isnow help` show full usage
 	}
 	instant, err := resolveInstant(env, at, tz)
 	if err != nil {

@@ -31,5 +31,5 @@ func run(args []string) int {
 		Sleep: app.RealSleep,
 		Spawn: app.RealSpawn,
 	}
-	return command.ExitCode(command.Root(env).Run(ctx, args))
+	return command.Report(env.Err, command.Root(env).Run(ctx, args))
 }

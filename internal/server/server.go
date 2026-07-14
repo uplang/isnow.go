@@ -34,6 +34,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1/wait/{isnow...}", s.handleWait)
 	mux.HandleFunc("GET /v1/watch/{isnow...}", s.handleWatch)
 	mux.HandleFunc("GET /healthz", s.handleHealth)
+	mux.HandleFunc("GET /{$}", s.handleIndex)
+	mux.HandleFunc("/", s.handleNotFound)
 	return noStore(mux)
 }
 
