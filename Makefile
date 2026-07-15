@@ -51,6 +51,7 @@ fmt: ## gofumpt formatting (fails on any diff)
 	@out="$$($(GOBIN)/gofumpt -l $(ALL_GO))"; test -z "$$out" || { echo "unformatted: $$out"; exit 1; }
 
 vet: ## go vet (owned packages; generated tree's diagnostics filtered out)
+	@go mod download  # pre-fetch so `go: downloading` notes don't pollute the captured vet output in a cold CI cache
 	@out="$$(go vet $(OWNED_PKGS) 2>&1 | grep -v 'internal/isnowgrammar/' || true)"; test -z "$$out" || { echo "$$out"; exit 1; }
 
 staticcheck: ## staticcheck (owned packages)
