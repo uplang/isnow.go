@@ -3,11 +3,13 @@ package isnow
 import "fmt"
 
 // An interval is a true periodic recurrence — "every N units" — as distinct from
-// a field-local step, which resets within a single field's cycle. An interval
-// crosses field boundaries (`+[90mn]` spans hours, `+[25h]` spans days, `+[10d]`
-// spans months) and is anchored at the civil epoch (1970-01-01T00:00:00 in the
-// evaluation zone), so it needs no explicit start. It fires at the beginning of
-// each grid unit: `+[90mn]` at 00:00, 01:30, 03:00, … (second 0).
+// a field-local step, which resets within a single field's cycle. An interval is
+// anchored hierarchically to the civil calendar (ADR 005): the stride's total
+// duration selects the smallest containing civil unit (the container), and the
+// interval repeats within each container, re-aligning at the container boundary.
+// So the anchor "moves with its unit": `+[2h]` fires at 00,02,…,22 each day and
+// re-aligns at every midnight; `+[3d]` fires on Sunday, Wednesday, and Saturday
+// and re-aligns every week. Membership stays O(1) — no epoch arithmetic.
 
 // intervalUnit is the grain of an interval step.
 type intervalUnit int
@@ -23,26 +25,127 @@ const (
 // four fill the cross-cycle gap (weeks/months/years are already fields).
 var intervalUnits = map[string]intervalUnit{"s": unitSecond, "mn": unitMinute, "h": unitHour, "d": unitDay}
 
-// intervalSpec is a compiled interval: a grain, a stride, and whether it descends.
-type intervalSpec struct {
-	unit intervalUnit
-	n    int
-	text string
+// seconds is the duration of one grain, in seconds.
+func (u intervalUnit) seconds() int {
+	switch u {
+	case unitSecond:
+		return 1
+	case unitMinute:
+		return 60
+	case unitHour:
+		return 3600
+	default:
+		return 86400
+	}
 }
 
-// holds reports whether the instant lands on the interval grid: it must be an
-// integer number of periods from the epoch, at the start of its grid unit.
-func (iv intervalSpec) holds(c instantCtx) bool {
-	switch iv.unit {
+// onBoundary reports that every field finer than the grain is zero, so the
+// instant lies exactly on a grain boundary (a minute grain needs second 0; an
+// hour grain minute and second 0; a day grain the whole time 00:00:00).
+func (u intervalUnit) onBoundary(c instantCtx) bool {
+	switch u {
 	case unitSecond:
-		return mod(totalSeconds(c), iv.n) == 0
+		return true
 	case unitMinute:
-		return c.second == 0 && mod(totalMinutes(c), iv.n) == 0
+		return c.second == 0
 	case unitHour:
-		return c.minute == 0 && c.second == 0 && mod(totalHours(c), iv.n) == 0
+		return c.minute == 0 && c.second == 0
 	default:
-		return c.hour == 0 && c.minute == 0 && c.second == 0 && mod(totalDays(c), iv.n) == 0
+		return c.hour == 0 && c.minute == 0 && c.second == 0
 	}
+}
+
+// minContainer is the smallest civil cycle strictly larger than the grain — the
+// floor of the container search (a grain never anchors within its own kind).
+func (u intervalUnit) minContainer() container {
+	switch u {
+	case unitSecond:
+		return cMinute
+	case unitMinute:
+		return cHour
+	case unitHour:
+		return cDay
+	default:
+		return cWeek
+	}
+}
+
+// container is a civil cycle an interval re-aligns to.
+type container int
+
+const (
+	cMinute container = iota
+	cHour
+	cDay
+	cWeek
+	cMonth
+	cYear
+)
+
+// nominalSeconds is the longest a container of each kind can run. It is used
+// only to select the container; the position within it is computed from the
+// instant's real fields, so a shorter actual cycle just truncates the tail.
+var nominalSeconds = [...]int{
+	cMinute: 60,
+	cHour:   3600,
+	cDay:    86400,
+	cWeek:   604800,
+	cMonth:  31 * 86400,
+	cYear:   366 * 86400,
+}
+
+// containerFor picks the smallest civil cycle (at least one grain larger than
+// the interval's own grain) whose nominal length holds the whole N-grain stride.
+// A stride longer than a year has no larger civil cycle, so it re-aligns
+// annually. The comparison divides the nominal by the grain (exact for every
+// reachable grain/container pair) to hold the N-stride without risking overflow.
+func containerFor(u intervalUnit, n int) container {
+	p := u.minContainer()
+	for p < cYear && nominalSeconds[p]/u.seconds() < n {
+		p++
+	}
+	return p
+}
+
+// secondsInto is the offset, in seconds, from the start of the container to the
+// instant. Divided by the grain it gives the grain-position the interval strides
+// over; the week container starts on Sunday (weekday 1), matching isnow's own
+// weekday numbering.
+func secondsInto(p container, c instantCtx) int {
+	tod := c.hour*3600 + c.minute*60 + c.second
+	switch p {
+	case cMinute:
+		return c.second
+	case cHour:
+		return c.minute*60 + c.second
+	case cDay:
+		return tod
+	case cWeek:
+		return (c.weekday-1)*86400 + tod
+	case cMonth:
+		return (c.day-1)*86400 + tod
+	default: // cYear
+		return (c.dayOfYear-1)*86400 + tod
+	}
+}
+
+// intervalSpec is a compiled interval: a grain, a stride, and the civil
+// container the stride re-aligns to.
+type intervalSpec struct {
+	unit      intervalUnit
+	n         int
+	container container
+	text      string
+}
+
+// holds reports whether the instant lands on the interval grid: it must sit on a
+// grain boundary and an integer number of strides into its civil container.
+func (iv intervalSpec) holds(c instantCtx) bool {
+	if !iv.unit.onBoundary(c) {
+		return false
+	}
+	pos := secondsInto(iv.container, c) / iv.unit.seconds()
+	return mod(pos, iv.n) == 0
 }
 
 // compileInterval validates and compiles an interval increment.
@@ -55,7 +158,8 @@ func compileInterval(in *rawIncr) (intervalSpec, error) {
 	if err != nil {
 		return intervalSpec{}, err
 	}
-	return intervalSpec{unit: intervalUnits[q.unit], n: n, text: fmt.Sprintf("+[%d%s]", n, q.unit)}, nil
+	u := intervalUnits[q.unit]
+	return intervalSpec{unit: u, n: n, container: containerFor(u, n), text: fmt.Sprintf("+[%d%s]", n, q.unit)}, nil
 }
 
 // hasSecondInterval reports whether any interval is second-grained (so the
@@ -67,36 +171,4 @@ func hasSecondInterval(ins []*rawIncr) bool {
 		}
 	}
 	return false
-}
-
-func totalDays(c instantCtx) int    { return daysFromCivil(c.year, c.month, c.day) }
-func totalHours(c instantCtx) int   { return totalDays(c)*24 + c.hour }
-func totalMinutes(c instantCtx) int { return totalHours(c)*60 + c.minute }
-func totalSeconds(c instantCtx) int { return totalMinutes(c)*60 + c.second }
-
-// daysFromCivil returns the number of days from 1970-01-01 to the civil date
-// (Howard Hinnant's algorithm), valid across the proleptic Gregorian calendar.
-func daysFromCivil(y, m, d int) int {
-	if m <= 2 {
-		y--
-	}
-	era := eraOf(y)
-	yoe := y - era*400
-	doy := (153*monthShift(m)+2)/5 + d - 1
-	doe := yoe*365 + yoe/4 - yoe/100 + doy
-	return era*146097 + doe - 719468
-}
-
-func eraOf(y int) int {
-	if y >= 0 {
-		return y / 400
-	}
-	return (y - 399) / 400
-}
-
-func monthShift(m int) int {
-	if m > 2 {
-		return m - 3
-	}
-	return m + 9
 }
