@@ -35,6 +35,9 @@ func compileTerm(r role, t rawTerm) (pred, error) {
 	case kindSpan:
 		return spanTerm(r, t)
 	case kindSpanStep:
+		if r == roleWeekday {
+			return setposTerm(t) // M-F-[1] = last business day (BYSETPOS over a weekday span)
+		}
 		return spanStepTerm(r, t)
 	default:
 		return exactTerm(r, t.lo)
@@ -108,6 +111,9 @@ func spanTerm(r role, t rawTerm) (pred, error) {
 		return nil, err
 	}
 	if t.hi.star {
+		if r == roleWeekday {
+			return nil, ErrContext // weekday spans need concrete endpoints (like symbolic v-*)
+		}
 		return func(c instantCtx) bool { return c.value(r) >= lo }, nil
 	}
 	if t.hi.name != "" {
@@ -212,6 +218,9 @@ func contains(set []int, v int) bool {
 func atomDays(a *rawAtom) int {
 	total := 0
 	for _, q := range a.qtys {
+		if q.num < 1 {
+			return 0 // an overflow/invalid member makes the whole tail invalid
+		}
 		total += q.num * unitDays(q.unit)
 	}
 	return total
