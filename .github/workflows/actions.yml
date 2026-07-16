@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: "45 1 * * 5"
+  workflow_dispatch:
 concurrency:
   group: actions-${{ github.ref }}
   cancel-in-progress: true
@@ -12,6 +15,9 @@ permissions:
   contents: read
 jobs:
   actions:
+    # A scheduled run re-lints against the floating ci/actions@v2 image with no push;
+    # distribute substitutes the per-repo cron above. Skip forks (no-op for push/PR).
+    if: github.event_name != 'schedule' || github.event.repository.fork == false
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

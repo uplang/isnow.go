@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: "45 1 * * 5"
+  workflow_dispatch:
 concurrency:
   group: go-${{ github.ref }}
   cancel-in-progress: true
@@ -12,6 +15,11 @@ permissions:
   contents: read
 jobs:
   go:
+    # A scheduled run re-validates against the floating ci/go@v2 tool image, the
+    # latest Go patch, and the current CVE database with no push. distribute
+    # substitutes the per-repo cron above; the guard skips forks (and is a no-op
+    # for push / pull_request, whose event name is never "schedule").
+    if: github.event_name != 'schedule' || github.event.repository.fork == false
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
