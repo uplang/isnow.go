@@ -11,7 +11,8 @@ import (
 	"testing"
 	"time"
 
-	isnow "github.com/tsvsheet/isnow.go"
+	isnow "github.com/tsvsheet/go-isnow"
+
 	"github.com/tsvsheet/isnow.go/internal/app"
 	"github.com/tsvsheet/isnow.go/internal/constants"
 )

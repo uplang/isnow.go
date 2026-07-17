@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	isnow "github.com/tsvsheet/isnow.go"
+	isnow "github.com/tsvsheet/go-isnow"
 )
 
 // Verdict is the outcome of the membership test.
@@ -18,7 +18,7 @@ type Verdict struct {
 
 // Query parses src and tests whether it holds at the instant.
 func Query(src string, at time.Time) (Verdict, error) {
-	p, err := isnow.Parse(src)
+	p, err := isnow.Parse(isnow.PatternText(src))
 	if err != nil {
 		return Verdict{}, err
 	}
@@ -29,7 +29,7 @@ func Query(src string, at time.Time) (Verdict, error) {
 // and returns ctx's error if the context is cancelled, so a caller can bound an
 // unbounded search on a pathological pattern.
 func Derive(ctx context.Context, src string, from time.Time, n int, forward bool) ([]time.Time, error) {
-	p, err := isnow.Parse(src)
+	p, err := isnow.Parse(isnow.PatternText(src))
 	if err != nil {
 		return nil, err
 	}

@@ -1,10 +1,10 @@
 package domain
 
-import isnow "github.com/tsvsheet/isnow.go"
+import isnow "github.com/tsvsheet/go-isnow"
 
 // Canon returns the canonical form of src.
 func Canon(src string) (string, error) {
-	p, err := isnow.Parse(src)
+	p, err := isnow.Parse(isnow.PatternText(src))
 	if err != nil {
 		return "", err
 	}
@@ -13,7 +13,7 @@ func Canon(src string) (string, error) {
 
 // Describe returns the canonical form and English explanation of src.
 func Describe(src string) (Verdict, error) {
-	p, err := isnow.Parse(src)
+	p, err := isnow.Parse(isnow.PatternText(src))
 	if err != nil {
 		return Verdict{}, err
 	}

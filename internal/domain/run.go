@@ -5,7 +5,8 @@ import (
 	"errors"
 	"time"
 
-	isnow "github.com/tsvsheet/isnow.go"
+	isnow "github.com/tsvsheet/go-isnow"
+
 	"github.com/tsvsheet/isnow.go/internal/app"
 	"github.com/tsvsheet/isnow.go/internal/constants"
 )
@@ -20,7 +21,7 @@ type Entry struct {
 
 // CompileEntry parses an entry's isnow.
 func CompileEntry(src, command string, args []string) (Entry, error) {
-	p, err := isnow.Parse(src)
+	p, err := isnow.Parse(isnow.PatternText(src))
 	if err != nil {
 		return Entry{}, err
 	}

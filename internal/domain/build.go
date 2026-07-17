@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	isnow "github.com/tsvsheet/isnow.go"
+	isnow "github.com/tsvsheet/go-isnow"
 )
 
 // BuildFields is the builder's per-field input (raw field-algebra text; empty
@@ -19,7 +19,7 @@ type BuildFields struct {
 // Build composes an isnow from field inputs, validating it via Parse.
 func Build(f BuildFields) (Verdict, string, error) {
 	src := composeFields(f)
-	p, err := isnow.Parse(src)
+	p, err := isnow.Parse(isnow.PatternText(src))
 	if err != nil {
 		return Verdict{}, "", err
 	}

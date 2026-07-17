@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"io"
 
-	isnow "github.com/tsvsheet/isnow.go"
+	isnow "github.com/tsvsheet/go-isnow"
+
 	"github.com/tsvsheet/isnow.go/internal/constants"
 )
 

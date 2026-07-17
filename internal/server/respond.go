@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	isnow "github.com/tsvsheet/isnow.go"
+	isnow "github.com/tsvsheet/go-isnow"
 )
 
 // checkBody is the JSON of the /v1/check response.
@@ -51,7 +51,7 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 
 // parsePattern parses src or writes a 400 with the library error code.
 func parsePattern(w http.ResponseWriter, src string) (isnow.Pattern, bool) {
-	p, err := isnow.Parse(src)
+	p, err := isnow.Parse(isnow.PatternText(src))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, isnow.Code(err), err.Error())
 		return isnow.Pattern{}, false
@@ -63,6 +63,6 @@ func isnowCode(err error) string { return isnow.Code(err) }
 
 // canonOf returns the canonical form of an already-validated src.
 func canonOf(src string) string {
-	p, _ := isnow.Parse(src)
+	p, _ := isnow.Parse(isnow.PatternText(src))
 	return p.Canonical()
 }

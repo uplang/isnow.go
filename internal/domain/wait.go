@@ -4,7 +4,8 @@ import (
 	"context"
 	"time"
 
-	isnow "github.com/tsvsheet/isnow.go"
+	isnow "github.com/tsvsheet/go-isnow"
+
 	"github.com/tsvsheet/isnow.go/internal/app"
 	"github.com/tsvsheet/isnow.go/internal/constants"
 )
@@ -12,7 +13,7 @@ import (
 // Wait blocks until src's next occurrence after now, or fails with ErrTimeout if
 // timeout elapses first (timeout <= 0 waits indefinitely).
 func Wait(ctx context.Context, env *app.Env, src string, timeout time.Duration) error {
-	p, err := isnow.Parse(src)
+	p, err := isnow.Parse(isnow.PatternText(src))
 	if err != nil {
 		return err
 	}
