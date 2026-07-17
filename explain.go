@@ -8,9 +8,12 @@ import "strings"
 func (p Pattern) Explain() string { return p.explanation }
 
 func renderExplain(sl slots, bounds []boundSpec) string {
-	clauses := []string{"holds at " + timeClause(sl)}
-	clauses = append(clauses, dateClauses(sl)...)
-	clauses = append(clauses, boundClauses(bounds)...)
+	date := dateClauses(sl)
+	bound := boundClauses(bounds)
+	clauses := make([]string, 0, 1+len(date)+len(bound))
+	clauses = append(clauses, "holds at "+timeClause(sl))
+	clauses = append(clauses, date...)
+	clauses = append(clauses, bound...)
 	return strings.Join(clauses, " ")
 }
 

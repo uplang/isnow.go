@@ -5,12 +5,12 @@ import "time"
 // Pattern is a parsed, canonicalized isnow. The zero value is not usable; obtain
 // one from Parse. Patterns are immutable and safe to copy and share.
 type Pattern struct {
-	fields      [numRoles]fieldSpec
+	canon       string
+	explanation string
 	bounds      []boundSpec
 	intervals   []intervalSpec
 	exclusions  []exclusionSpec
-	canon       string
-	explanation string
+	fields      [numRoles]fieldSpec
 }
 
 // Parse recognizes src, resolves symbols and the shorthand ladder, and validates
@@ -20,8 +20,8 @@ func Parse(src string) (Pattern, error) {
 	if err != nil {
 		return Pattern{}, err
 	}
-	if err := validateUnits(raw); err != nil {
-		return Pattern{}, err
+	if verr := validateUnits(raw); verr != nil {
+		return Pattern{}, verr
 	}
 	sl, err := mapGroups(raw.groups, hasSecondInterval(raw.intervals), false)
 	if err != nil {

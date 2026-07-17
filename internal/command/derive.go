@@ -17,7 +17,7 @@ func deriveCommand(env *app.Env, name string, forward bool) *cli.Command {
 	return &cli.Command{
 		Name:      name,
 		Usage:     "print the " + name + " occurrences",
-		ArgsUsage: "<isnow>",
+		ArgsUsage: argIsnow,
 		Flags: []cli.Flag{
 			&cli.IntFlag{Name: "count", Aliases: []string{"n"}, Value: 1, Usage: "how many"},
 			instantFlag("from", &from),
@@ -38,7 +38,7 @@ func runDerive(ctx context.Context, env *app.Env, c *cli.Command, from, tz strin
 	if err != nil {
 		return err
 	}
-	occ, err := domain.Derive(ctx, src, instant, int(c.Int("count")), forward)
+	occ, err := domain.Derive(ctx, src, instant, c.Int("count"), forward)
 	if err != nil {
 		return err
 	}
@@ -48,6 +48,6 @@ func runDerive(ctx context.Context, env *app.Env, c *cli.Command, from, tz strin
 
 func printInstants(env *app.Env, occ []time.Time) {
 	for _, t := range occ {
-		fmt.Fprintln(env.Out, t.Format(time.RFC3339))
+		_, _ = fmt.Fprintln(env.Out, t.Format(time.RFC3339))
 	}
 }

@@ -16,7 +16,7 @@ func waitCommand(env *app.Env) *cli.Command {
 	return &cli.Command{
 		Name:      "wait",
 		Usage:     "block until the next occurrence",
-		ArgsUsage: "<isnow>",
+		ArgsUsage: argIsnow,
 		Flags: []cli.Flag{
 			&cli.DurationFlag{Name: "timeout", Usage: "give up after this long (0 = never)"},
 		},

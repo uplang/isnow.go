@@ -108,22 +108,22 @@ func TestWeekStepNonDayIsContext(t *testing.T) {
 
 func TestMoreErrorBranches(t *testing.T) {
 	cases := []struct {
-		src  string
 		want error
+		src  string
 	}{
-		{"25-30", ErrRange},             // span lo out of domain
-		{"25-30+[2]", ErrRange},         // span-step with a bad span
-		{"8-25", ErrRange},              // span hi out of domain
-		{"M-T noon", ErrSymbol},         // ambiguous span endpoint
-		{"M,T+[1] noon", ErrSymbol},     // ambiguous weekday in an occurrence step
-		{"*/*/M+[3w] noon", ErrContext}, // name anchor on a week step
-		{"*/*/1+[0w] noon", ErrRange},   // zero week step
-		{":M+[2]", ErrContext},          // name anchor on an arithmetic step
-		{":99999+[2]", ErrRange},        // anchor out of domain
-		{"8-12+[0]", ErrRange},          // zero step on a span-step
-		{"noon >=5x", ErrSymbol},        // bad unit inside a bound
-		{"0-A", ErrContext},             // numeric low with a symbolic high
-		{"M-5 noon", ErrContext},        // symbolic low with a numeric high
+		{src: "25-30", want: ErrRange},             // span lo out of domain
+		{src: "25-30+[2]", want: ErrRange},         // span-step with a bad span
+		{src: "8-25", want: ErrRange},              // span hi out of domain
+		{src: "M-T noon", want: ErrSymbol},         // ambiguous span endpoint
+		{src: "M,T+[1] noon", want: ErrSymbol},     // ambiguous weekday in an occurrence step
+		{src: "*/*/M+[3w] noon", want: ErrContext}, // name anchor on a week step
+		{src: "*/*/1+[0w] noon", want: ErrRange},   // zero week step
+		{src: ":M+[2]", want: ErrContext},          // name anchor on an arithmetic step
+		{src: ":99999+[2]", want: ErrRange},        // anchor out of domain
+		{src: "8-12+[0]", want: ErrRange},          // zero step on a span-step
+		{src: "noon >=5x", want: ErrSymbol},        // bad unit inside a bound
+		{src: "0-A", want: ErrContext},             // numeric low with a symbolic high
+		{src: "M-5 noon", want: ErrContext},        // symbolic low with a numeric high
 	}
 	for _, c := range cases {
 		parseErr(t, c.src, c.want)

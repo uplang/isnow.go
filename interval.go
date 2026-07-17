@@ -132,10 +132,10 @@ func secondsInto(p container, c instantCtx) int {
 // intervalSpec is a compiled interval: a grain, a stride, and the civil
 // container the stride re-aligns to.
 type intervalSpec struct {
+	text      string
 	unit      intervalUnit
 	n         int
 	container container
-	text      string
 }
 
 // holds reports whether the instant lands on the interval grid: it must sit on a

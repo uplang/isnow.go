@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"html"
 	"net/http"
 	"time"
 )
@@ -81,7 +82,7 @@ func (s *Server) streamOccurrences(r *http.Request, w http.ResponseWriter, flush
 		if err := s.sleep(r.Context(), next.Sub(now)); err != nil {
 			return
 		}
-		fmt.Fprintf(w, "event: occurrence\ndata: %s\n\n", next.Format(time.RFC3339))
+		_, _ = fmt.Fprintf(w, "event: occurrence\ndata: %s\n\n", html.EscapeString(next.Format(time.RFC3339)))
 		flusher.Flush()
 	}
 }

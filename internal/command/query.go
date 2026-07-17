@@ -16,7 +16,7 @@ func query(env *app.Env) *cli.Command {
 	var at, tz string
 	var explain bool
 	return &cli.Command{
-		ArgsUsage: "<isnow>",
+		ArgsUsage: argIsnow,
 		Flags: []cli.Flag{
 			instantFlag("at", &at),
 			tzFlag(&tz),
@@ -43,7 +43,7 @@ func runQuery(env *app.Env, c *cli.Command, at, tz string, explain bool) error {
 		return err
 	}
 	if explain {
-		fmt.Fprintf(env.Out, "%s\n%t\n", v.Canonical, v.Holds)
+		_, _ = fmt.Fprintf(env.Out, "%s\n%t\n", v.Canonical, v.Holds)
 	}
 	if v.Holds {
 		return nil

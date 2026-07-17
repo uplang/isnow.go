@@ -1,4 +1,4 @@
 # Anti-rot exemption ledger (nicerobot/tools.build/standards/capabilities.yaml).
 # Exemptions must shrink toward zero.
 exempt:
-  gate:lint: "yze conformance backlog — 244 findings at shared-gate adoption 2026-07-16 (namedtypes/ptrparam/boolname API-shape refactor across the parser); task 14 in the agent queue owns the burn-down. The ratchet hard-fails this entry the moment lint passes."
+  gate:lint: "yze conformance backlog — 214 findings remaining (2026-07-16: mechanical set cleared — fieldalignment/prealloc/goconst/unconvert/gosec/revive; all remaining are yze API-shape) (namedtypes/ptrparam/boolname API-shape refactor across the parser); task 14 in the agent queue owns the burn-down. The ratchet hard-fails this entry the moment lint passes."

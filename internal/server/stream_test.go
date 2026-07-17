@@ -110,7 +110,7 @@ func (n nonFlusher) Header() http.Header       { return n.h }
 func (nonFlusher) Write(b []byte) (int, error) { return len(b), nil }
 func (nonFlusher) WriteHeader(int)             {}
 
-func TestWatchStreamingUnsupported(t *testing.T) {
+func TestWatchStreamingUnsupported(_ *testing.T) {
 	srv := New(fixedNow, nil)
 	req := httptest.NewRequest(http.MethodGet, "/v1/watch/6", nil)
 	req.SetPathValue("isnow", "6")

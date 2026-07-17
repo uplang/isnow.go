@@ -28,49 +28,49 @@ const (
 // rawQty is a magnitude with an optional unit name ('w'/'d'); digits is the
 // written digit count, which distinguishes a four-digit year in a bound.
 type rawQty struct {
+	unit   string
 	num    int
 	digits int
-	unit   string
 }
 
 // rawAtom is a single value: wildcard, a NAME symbol, or a numeric quantity run.
 type rawAtom struct {
-	star bool
 	name string
 	qtys []rawQty
+	star bool
 }
 
 // rawIncr is a step expression, '+' (from anchor) or '-' (from the end).
 type rawIncr struct {
-	fromEnd bool
 	qtys    []rawQty
+	fromEnd bool
 }
 
 // rawTerm is the shared per-field algebra `!v-v±[N]` (exclusion held on the field).
 type rawTerm struct {
 	lo        *rawAtom
 	hi        *rawAtom
-	loFromEnd bool
 	incr      *rawIncr
+	loFromEnd bool
 }
 
 // rawField is an optional exclusion over a set of terms; absent = empty slot.
 type rawField struct {
+	terms   []rawTerm
 	present bool
 	exclude bool
-	terms   []rawTerm
 }
 
 // rawGroup is one date/time/bare group with its positional field slots.
 type rawGroup struct {
-	kind  groupKind
 	slots []rawField
+	kind  groupKind
 }
 
 // rawBound is one since/until bound with its sub-spec groups.
 type rawBound struct {
-	op     boundKind
 	groups []rawGroup
+	op     boundKind
 }
 
 // rawPattern is the whole parse: the main groups, any bounds, intervals, and

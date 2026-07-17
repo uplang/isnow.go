@@ -67,9 +67,9 @@ type pred func(instantCtx) bool
 
 // fieldSpec is a compiled field: OR of its term predicates, optionally excluded.
 type fieldSpec struct {
-	exclude bool
-	terms   []pred
 	text    string
+	terms   []pred
+	exclude bool
 }
 
 // holds reports whether the field constrains-matches the instant.

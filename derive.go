@@ -113,10 +113,13 @@ func (p Pattern) dayInstants(day time.Time) []time.Time {
 	c := newCtx(day)
 	y, m, d := day.Date()
 	loc := day.Location()
-	var out []time.Time
-	for _, h := range p.matching(roleHour, c, 0, 23) {
-		for _, mi := range p.matching(roleMinute, c, 0, 59) {
-			for _, s := range p.matching(roleSecond, c, 0, 59) {
+	hours := p.matching(roleHour, c, 0, 23)
+	minutes := p.matching(roleMinute, c, 0, 59)
+	seconds := p.matching(roleSecond, c, 0, 59)
+	out := make([]time.Time, 0, len(hours)*len(minutes)*len(seconds))
+	for _, h := range hours {
+		for _, mi := range minutes {
+			for _, s := range seconds {
 				out = append(out, time.Date(y, m, d, h, mi, s, 0, loc))
 			}
 		}

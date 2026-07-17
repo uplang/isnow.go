@@ -39,7 +39,7 @@ func realServe(ctx context.Context, env *app.Env, addr string) error {
 	}
 	errc := make(chan error, 1)
 	go func() { errc <- srv.ListenAndServe() }()
-	fmt.Fprintf(env.Err, "isnow serving on %s\n", addr)
+	_, _ = fmt.Fprintf(env.Err, "isnow serving on %s\n", addr)
 	return awaitShutdown(ctx, srv, errc)
 }
 

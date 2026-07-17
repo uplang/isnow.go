@@ -15,7 +15,7 @@ func canonCommand(env *app.Env) *cli.Command {
 	return &cli.Command{
 		Name:      "canon",
 		Usage:     "print the canonical form",
-		ArgsUsage: "<isnow>",
+		ArgsUsage: argIsnow,
 		Action: func(_ context.Context, c *cli.Command) error {
 			src, err := firstArg(c)
 			if err != nil {
@@ -25,7 +25,7 @@ func canonCommand(env *app.Env) *cli.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(env.Out, canonical)
+			_, _ = fmt.Fprintln(env.Out, canonical)
 			return nil
 		},
 	}
@@ -36,7 +36,7 @@ func explainCommand(env *app.Env) *cli.Command {
 	return &cli.Command{
 		Name:      "explain",
 		Usage:     "print the canonical form and an English description",
-		ArgsUsage: "<isnow>",
+		ArgsUsage: argIsnow,
 		Action: func(_ context.Context, c *cli.Command) error {
 			src, err := firstArg(c)
 			if err != nil {
@@ -46,7 +46,7 @@ func explainCommand(env *app.Env) *cli.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(env.Out, "%s\n%s\n", v.Canonical, v.Explain)
+			_, _ = fmt.Fprintf(env.Out, "%s\n%s\n", v.Canonical, v.Explain)
 			return nil
 		},
 	}

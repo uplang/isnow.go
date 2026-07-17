@@ -10,6 +10,9 @@ import (
 	"github.com/uplang/isnow.go/internal/domain"
 )
 
+// argIsnow is the usage metavariable naming the pattern argument.
+const argIsnow = "<isnow>"
+
 // buildFlagNames are the builder's per-field flags.
 var buildFlagNames = []string{"year", "month", "day", "weekday", "hour", "minute", "second", "since", "until"}
 
@@ -24,7 +27,7 @@ func buildCommand(env *app.Env) *cli.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(env.Out, v.Canonical)
+			_, _ = fmt.Fprintln(env.Out, v.Canonical)
 			return nil
 		},
 	}

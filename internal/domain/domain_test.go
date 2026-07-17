@@ -53,8 +53,8 @@ func TestCanonAndDescribe(t *testing.T) {
 	if err != nil || c != "*/*/* * 06:00:00" {
 		t.Fatalf("Canon = %q, %v", c, err)
 	}
-	if _, err := Canon("25"); !errors.Is(err, isnow.ErrRange) {
-		t.Fatalf("Canon(bad) = %v", err)
+	if _, cerr := Canon("25"); !errors.Is(cerr, isnow.ErrRange) {
+		t.Fatalf("Canon(bad) = %v", cerr)
 	}
 	v, err := Describe("noon")
 	if err != nil || v.Explain == "" {

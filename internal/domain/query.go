@@ -11,9 +11,9 @@ import (
 
 // Verdict is the outcome of the membership test.
 type Verdict struct {
-	Holds     bool
 	Canonical string
 	Explain   string
+	Holds     bool
 }
 
 // Query parses src and tests whether it holds at the instant.

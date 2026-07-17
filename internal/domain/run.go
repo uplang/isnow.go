@@ -13,9 +13,9 @@ import (
 // Entry is one nowtab-style schedule: an isnow and the command to run at each
 // occurrence.
 type Entry struct {
-	pattern isnow.Pattern
 	Command string
 	Args    []string
+	pattern isnow.Pattern
 }
 
 // CompileEntry parses an entry's isnow.

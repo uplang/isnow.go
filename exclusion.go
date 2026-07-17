@@ -4,8 +4,8 @@ package isnow
 // at an instant when every field of the exclusion sub-spec holds there. Absent
 // time fields default to wildcard, so `! 12/25` excludes all of December 25.
 type exclusionSpec struct {
-	fields [numRoles]fieldSpec
 	text   string
+	fields [numRoles]fieldSpec
 }
 
 func (e exclusionSpec) excludes(c instantCtx) bool {

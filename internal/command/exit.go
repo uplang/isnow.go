@@ -14,7 +14,7 @@ import (
 // code. It is the composition root's single place for surfacing errors.
 func Report(w io.Writer, err error) int {
 	if err != nil && !errors.Is(err, ErrNotHolds) {
-		fmt.Fprintf(w, "isnow: %s\n", err)
+		_, _ = fmt.Fprintf(w, "isnow: %s\n", err)
 	}
 	return ExitCode(err)
 }

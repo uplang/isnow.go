@@ -10,9 +10,9 @@ type boundField struct {
 // its constrained fields (specs/contracts/semantics.md §Bounds). text is the
 // canonical sub-spec, rendered as a full Y/m/d w H:M:S form so it round-trips.
 type boundSpec struct {
-	op     boundKind
-	fields []boundField
 	text   string
+	fields []boundField
+	op     boundKind
 }
 
 func (b boundSpec) satisfied(c instantCtx) bool {

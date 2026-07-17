@@ -35,7 +35,7 @@ func fieldText(sl slots, r role) string {
 }
 
 func renderField(r role, f rawField) string {
-	var vals []string
+	vals := make([]string, 0, len(f.terms))
 	for _, t := range f.terms {
 		vals = append(vals, renderTerm(r, t)...)
 	}
@@ -136,7 +136,7 @@ func renderMagnitude(r role, a *rawAtom) string {
 	}
 	var b strings.Builder
 	for _, q := range a.qtys {
-		fmt.Fprintf(&b, "%d%s", q.num, q.unit)
+		_, _ = fmt.Fprintf(&b, "%d%s", q.num, q.unit)
 	}
 	return b.String()
 }
@@ -164,7 +164,7 @@ func capitalize(s string) string {
 func renderBounds(bounds []boundSpec) string {
 	var b strings.Builder
 	for _, bound := range bounds {
-		b.WriteString(" " + boundOpText(bound.op) + bound.text)
+		_, _ = b.WriteString(" " + boundOpText(bound.op) + bound.text)
 	}
 	return b.String()
 }

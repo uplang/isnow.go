@@ -32,7 +32,7 @@ func loadCorpus(t *testing.T) []corpusCase {
 	if err != nil || len(files) == 0 {
 		t.Skipf("conformance corpus not present at %s", corpusDir)
 	}
-	var all []corpusCase
+	all := make([]corpusCase, 0, len(files))
 	for _, f := range files {
 		data, err := os.ReadFile(f)
 		if err != nil {
