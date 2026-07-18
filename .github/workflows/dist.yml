@@ -65,11 +65,13 @@ jobs:
           check-latest: true
           cache: true
       - if: steps.tag.outputs.skip != 'true'
-        run: go install github.com/goreleaser/goreleaser/v2@latest
+        run: |
+          go install github.com/goreleaser/goreleaser/v2@latest
+          echo "$(go env GOPATH)/bin" >> "${GITHUB_PATH}"
       - if: steps.tag.outputs.skip != 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: "$(go env GOPATH)/bin/goreleaser" release --clean
+        run: goreleaser release --clean
       # SLSA build-provenance attestations for every distributed artifact —
       # verifiable by anyone with: gh attestation verify <file> --owner tsvsheet
       - if: steps.tag.outputs.skip != 'true'
