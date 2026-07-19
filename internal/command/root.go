@@ -17,6 +17,7 @@ func Root(env *app.Env) *cli.Command {
 	root.Usage = "match instants against isnow date/time patterns"
 	root.Description = "isnow tests, derives, explains, schedules, and serves isnow patterns."
 	root.EnableShellCompletion = true
+	root.ShellCompletionCommandName = builtinCompletionName
 	root.Writer = env.Out
 	root.ErrWriter = env.Err
 	root.ExitErrHandler = func(context.Context, *cli.Command, error) {}
@@ -29,6 +30,8 @@ func Root(env *app.Env) *cli.Command {
 		runCommand(env),
 		buildCommand(env),
 		serveCommand(env),
+		completionCommand(),
+		manCommand(),
 	}
 	return root
 }

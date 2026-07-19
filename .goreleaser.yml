@@ -4,6 +4,18 @@ project_name: isnow
 
 dist: dist
 
+# Shell completions and the man page ship in every archive and package. They
+# are generated from the CLI's own command tree (the completion and man
+# subcommands) into the gitignored var/ tree — never into dist/, which
+# goreleaser requires empty after its own cleanup.
+before:
+  hooks:
+    - mkdir -p var/extras/completions var/extras/man
+    - sh -c "go run ./cmd/isnow completion bash > var/extras/completions/isnow.bash"
+    - sh -c "go run ./cmd/isnow completion zsh > var/extras/completions/isnow.zsh"
+    - sh -c "go run ./cmd/isnow completion fish > var/extras/completions/isnow.fish"
+    - sh -c "go run ./cmd/isnow man > var/extras/man/isnow.1"
+
 git:
   ignore_tags:
     - "saved/*"
@@ -48,6 +60,10 @@ archives:
       - LICENSE*
       - README*
       - CHANGELOG*
+      - src: var/extras/completions/*
+        dst: completions
+      - src: var/extras/man/*
+        dst: man
 
 nfpms:
   - id: packages
@@ -60,6 +76,15 @@ nfpms:
     formats:
       - deb
       - rpm
+    contents:
+      - src: var/extras/completions/isnow.bash
+        dst: /usr/share/bash-completion/completions/isnow
+      - src: var/extras/completions/isnow.zsh
+        dst: /usr/share/zsh/site-functions/_isnow
+      - src: var/extras/completions/isnow.fish
+        dst: /usr/share/fish/vendor_completions.d/isnow.fish
+      - src: var/extras/man/isnow.1
+        dst: /usr/share/man/man1/isnow.1
 
 checksum:
   name_template: "checksums.txt"

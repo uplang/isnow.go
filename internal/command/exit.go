@@ -33,6 +33,7 @@ var userErrors = []error{
 	isnow.ErrSyntax, isnow.ErrSymbol, isnow.ErrRange, isnow.ErrContext,
 	constants.ErrBadTime, constants.ErrBadZone,
 	constants.ErrMissingCommand, constants.ErrReadTab,
+	constants.ErrMissingShell, constants.ErrUnsupportedShell,
 }
 
 // ExitCode maps a command error to the CLI exit code (specs/contracts/cli.md).
